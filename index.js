@@ -1,9 +1,21 @@
 const express = require("express");
 const app = express();
+const cors = require("cors")
 
 const { initializeDatabase } = require("./db/db.connect");
 
 const Event = require("./models/event.models");
+
+const corsOptions = {
+  origin: [
+    "http://localhost:5173",
+    "https://bi-assignment-1-nine.vercel.app"
+],
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 
@@ -89,6 +101,31 @@ app.get("/events/title/:eventTitle", async(req, res) => {
     }
 });
 
+// App update by Id
+async function updateEvent(eventId, dataToUpdate) {
+    try {
+        const updatedEvent = await Event.findByIdAndUpdate(eventId, dataToUpdate, {new: true});
+        return updatedEvent;
+    } catch (error) {
+        throw error;
+    }
+}
+
+app.post("/events/:eventId", async(req, res) => {
+    try {
+        const updatedEvent = await updateEvent(req.params.eventId, req.body);
+
+        if(updatedEvent) {
+            res.status(200).json({message: "Event updated successfully.", data: updatedEvent})
+        } else {
+            res.status(201).json({error: "Event not found"})
+        }
+        
+    } catch (error) {
+        res.status(500).json({error: "Error to update Event.", message: error.message})
+    }
+})
+
 // delete event by Id
 async function deleteEvent(eventId) {
     try {
@@ -113,6 +150,34 @@ app.delete("/events/:eventId", async(req, res) => {
         
     } catch (error) {
         res.status(500).json({error: "Failed delete Event.", message: error.message})
+    }
+});
+
+// get event by eventId
+async function getEventByEventId(eventId) {
+    try {
+
+        const eventByEventId = await Event.findById(eventId)
+        return eventByEventId;
+        
+    } catch (error) {
+        throw error;
+    }
+}
+
+app.get("/events/:eventId", async(req, res) => {
+    try {
+
+        const eventByEventId = await getEventByEventId(req.params.eventId);
+
+        if(eventByEventId) {
+            res.status(200).json({message: "Event fetched successfully.", data: eventByEventId})
+        } else {
+            res.status(404).json({message: "Event not found."})
+        }
+        
+    } catch (error) {
+        res.status(500).json({error: "Failed to fetched Event by Id.", message: error.message})
     }
 })
 
